@@ -1,0 +1,92 @@
+[
+  {
+    "product_name": "Paneer",
+    "product_id": 8800000003,
+    "original_price": 60,
+    "mfg_date": "2025-06-24",
+    "expiry_date": "2025-07-07",
+    "days_left": 1,
+    "discounted_price": 43.11
+  },
+  {
+    "product_name": "Bread",
+    "product_id": 8800000022,
+    "original_price": 55,
+    "mfg_date": "2025-06-25",
+    "expiry_date": "2025-07-07",
+    "days_left": 1,
+    "discounted_price": 42.63
+  },
+  {
+    "product_name": "Bread",
+    "product_id": 8800000028,
+    "original_price": 55,
+    "mfg_date": "2025-06-22",
+    "expiry_date": "2025-07-07",
+    "days_left": 1,
+    "discounted_price": 36.16
+  },
+  {
+    "product_name": "Paneer",
+    "product_id": 8800000033,
+    "original_price": 60,
+    "mfg_date": "2025-06-23",
+    "expiry_date": "2025-07-08",
+    "days_left": 2,
+    "discounted_price": 39.85
+  },
+  {
+    "product_name": "Bread",
+    "product_id": 8800000039,
+    "original_price": 55,
+    "mfg_date": "2025-06-26",
+    "expiry_date": "2025-07-08",
+    "days_left": 2,
+    "discounted_price": 44.41
+  },
+  {
+    "product_name": "Milk",
+    "product_id": 8800000042,
+    "original_price": 50,
+    "mfg_date": "2025-06-24",
+    "expiry_date": "2025-07-08",
+    "days_left": 2,
+    "discounted_price": 36.05
+  },
+  {
+    "product_name": "Milk",
+    "product_id": 8800000069,
+    "original_price": 50,
+    "mfg_date": "2025-06-25",
+    "expiry_date": "2025-07-07",
+    "days_left": 1,
+    "discounted_price": 43.42
+  },
+  {
+    "product_name": "Bread",
+    "product_id": 8800000071,
+    "original_price": 55,
+    "mfg_date": "2025-06-25",
+    "expiry_date": "2025-07-10",
+    "days_left": 4,
+    "discounted_price": 49.06
+  },
+  {
+    "product_name": "Milk",
+    "product_id": 8800000085,
+    "original_price": 50,
+    "mfg_date": "2025-06-23",
+    "expiry_date": "2025-07-08",
+    "days_left": 2,
+    "discounted_price": 44.01
+  },
+  {
+    "product_name": "Paneer",
+    "product_id": 8800000093,
+    "original_price": 60,
+    "mfg_date": "2025-06-22",
+    "expiry_date": "2025-07-07",
+    "days_left": 1,
+    "discounted_price": 38.9
+  }
+]
