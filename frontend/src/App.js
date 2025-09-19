@@ -5,6 +5,7 @@ import LandingPage from "./components/LandingPage"
 import EcoShelfView from "./components/EcoShelfView"
 import Cart from "./components/Cart"
 import CheckoutSummary from "./components/CheckoutSummary"
+import storeLocator from "./components/storeLocator
 import "./styles/App.css"
 
 function App() {
