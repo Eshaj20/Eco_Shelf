@@ -5,7 +5,7 @@ import LandingPage from "./components/LandingPage"
 import EcoShelfView from "./components/EcoShelfView"
 import Cart from "./components/Cart"
 import CheckoutSummary from "./components/CheckoutSummary"
-import StoreLocator from "./components/StoreLocator
+import StoreLocator from "./components/StoreLocator"
 import "./styles/App.css"
 
 function App() {
@@ -54,7 +54,7 @@ function App() {
 
   return (
     <div className="app">
-      {/* Walmart-style Navigation */}
+      {/* Navigation Bar */}
       <nav className="navbar">
         <div className="navbar-container">
           <div className="navbar-brand">
@@ -79,6 +79,14 @@ function App() {
               </button>
             </li>
             <li className="nav-item">
+              <button
+                className={`nav-link ${currentView === "storelocator" ? "active" : ""}`}
+                onClick={() => setCurrentView("storelocator")}
+              >
+                Store Locator
+              </button>
+            </li>
+            <li className="nav-item">
               <button className="cart-button" onClick={() => setCurrentView("cart")}>
                 🛒 Cart
                 {getTotalItems() > 0 && <span className="cart-badge">{getTotalItems()}</span>}
@@ -92,6 +100,7 @@ function App() {
       <main>
         {currentView === "home" && <LandingPage onNavigateToEcoShelf={() => setCurrentView("ecoshelf")} />}
         {currentView === "ecoshelf" && <EcoShelfView onAddToCart={addToCart} />}
+        {currentView === "storelocator" && <StoreLocator />}
         {currentView === "cart" && (
           <Cart
             cartItems={cartItems}
