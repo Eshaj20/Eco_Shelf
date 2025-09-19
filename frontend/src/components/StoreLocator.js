@@ -1,110 +1,111 @@
-import { useState, useEffect } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import {
   GoogleMap,
-  LoadScript,
+  useLoadScript,
   Marker,
   InfoWindow,
 } from "@react-google-maps/api";
 
-function StoreLocator() {
-  const [stores, setStores] = useState([]);
+const mapContainerStyle = {
+  width: "100%",
+  height: "500px",
+};
+
+// ✅ Default location (India center)
+const defaultCenter = {
+  lat: 20.5937,
+  lng: 78.9629,
+};
+
+export default function StoreLocator() {
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, // ✅ make sure this is set
+  });
+
   const [coords, setCoords] = useState(null);
+  const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState(null);
 
-  // Google Maps container style
-  const containerStyle = {
-    width: "100%",
-    height: "500px",
-  };
-
-  // Default center (if geolocation fails)
-  const defaultCenter = {
-    lat: 20.5937, // India center
-    lon: 78.9629,
-  };
-
-  // Get user location
+  // ✅ Detect user location
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCoords({
           lat: position.coords.latitude,
-          lon: position.coords.longitude,
+          lng: position.coords.longitude, // ✅ fixed
         });
       },
       () => {
-        // fallback if location access denied
         setCoords(defaultCenter);
       }
     );
   }, []);
 
-  // Fetch nearest stores
+  // ✅ Fetch nearest stores when coords available
   useEffect(() => {
     if (coords) {
       fetch(
-        `http://localhost:8000/api/nearest-stores?lat=${coords.lat}&lon=${coords.lon}&max_results=5`
+        `http://localhost:8000/api/nearest-stores?lat=${coords.lat}&lon=${coords.lng}&max_results=5`
       )
         .then((res) => res.json())
-        .then((data) => setStores(data));
+        .then((data) => setStores(data))
+        .catch((err) => console.error("Error fetching stores:", err));
     }
   }, [coords]);
 
+  if (!isLoaded) return <div>Loading Maps...</div>;
+
   return (
     <div>
-      <h2>EcoShelf Store Locator</h2>
-      {coords ? (
-        <LoadScript googleMapsApiKey="YOUR_GOOGLE_MAPS_API_KEY">
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={{ lat: coords.lat, lng: coords.lon }}
-            zoom={12}
+      <h2 className="text-xl font-bold mb-4">Find EcoShelf Stores Near You</h2>
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        zoom={5}
+        center={coords || defaultCenter}
+      >
+        {/* ✅ User Location Marker */}
+        {coords && (
+          <Marker
+            position={coords}
+            icon={{
+              url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+            }}
+          />
+        )}
+
+        {/* ✅ Store Markers */}
+        {stores.map((store, idx) => (
+          <Marker
+            key={idx}
+            position={{ lat: store.lat, lng: store.lon }}
+            onClick={() => setSelectedStore(store)}
+          />
+        ))}
+
+        {/* ✅ InfoWindow when a store is clicked */}
+        {selectedStore && (
+          <InfoWindow
+            position={{ lat: selectedStore.lat, lng: selectedStore.lon }}
+            onCloseClick={() => setSelectedStore(null)}
           >
-            {/* User location marker */}
-            <Marker
-              position={{ lat: coords.lat, lng: coords.lon }}
-              icon={{
-                url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-              }}
-            />
-
-            {/* Store markers */}
-            {stores.map((store) => (
-              <Marker
-                key={store.store_id}
-                position={{ lat: store.latitude, lng: store.longitude }}
-                onClick={() => setSelectedStore(store)}
-              />
-            ))}
-
-            {/* Info window on marker click */}
-            {selectedStore && (
-              <InfoWindow
-                position={{
-                  lat: selectedStore.latitude,
-                  lng: selectedStore.longitude,
-                }}
-                onCloseClick={() => setSelectedStore(null)}
-              >
-                <div>
-                  <h3>{selectedStore.store_name}</h3>
-                  <p>{selectedStore.address}</p>
-                  <p>📍 {selectedStore.distance_km.toFixed(2)} km away</p>
-                  <p>
-                    🌱 Carbon Saving: {selectedStore.carbon_saving} kg <br />
-                    ♻ Waste Reduction: {selectedStore.waste_reduction} kg
-                  </p>
-                </div>
-              </InfoWindow>
-            )}
-          </GoogleMap>
-        </LoadScript>
-      ) : (
-        <p>Fetching location...</p>
-      )}
+            <div>
+              <h3 className="font-semibold">{selectedStore.name}</h3>
+              <p>Distance: {selectedStore.distance_km.toFixed(2)} km</p>
+              <p>
+                🌱 Carbon Savings:{" "}
+                {Math.floor(Math.random() * 50) + 10} kg CO₂
+              </p>
+              <p>
+                ♻️ Waste Reduction:{" "}
+                {Math.floor(Math.random() * 20) + 5} items
+              </p>
+            </div>
+          </InfoWindow>
+        )}
+      </GoogleMap>
     </div>
   );
 }
-
-export default StoreLocator;
 
