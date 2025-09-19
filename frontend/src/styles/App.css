@@ -105,6 +105,12 @@
   font-weight: bold;
 }
 
+/* App.css */
+.leaflet-container {
+  width: 100%;
+  height: 500px;
+}
+
 /* Mobile Navigation */
 @media (max-width: 768px) {
   .navbar-nav {
