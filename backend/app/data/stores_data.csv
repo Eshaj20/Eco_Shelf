@@ -1,0 +1,4 @@
+store_id,store_name,address,latitude,longitude,has_discounted_products,carbon_saving,waste_reduction
+1,EcoShelf Pune,Shivajinagar,18.5204,73.8567,True,120,85
+2,EcoShelf Mumbai,Andheri,19.076,72.8777,True,200,150
+3,EcoShelf Delhi,Connaught Place,28.7041,77.1025,True,300,210
