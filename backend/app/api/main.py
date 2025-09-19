@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Request, HTTPException, Query
+from fastapi import FastAPI, Request, HTTPException
 import pandas as pd
 import joblib
 import json
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from math import radians, cos, sin, sqrt, atan2
+from geopy.distance import geodesic
 
 app = FastAPI()
 
@@ -26,56 +26,6 @@ except Exception as e:
     model = None
     print(f"❌ Failed to load model: {e}")
 
-# -------------------------------
-# 🌍 Store Locator (Maps API Part)
-# -------------------------------
-
-# Sample EcoShelf-enabled stores (later move to DB/CSV if needed)
-stores = [
-    {
-        "id": 1,
-        "name": "EcoShelf Store Pune",
-        "latitude": 18.5204,
-        "longitude": 73.8567,
-        "carbon_savings": "120kg CO₂",
-        "waste_reduction": "85kg",
-        "discounted_products": ["Organic Rice", "Eco Bag", "Compost Kit"]
-    },
-    {
-        "id": 2,
-        "name": "EcoShelf Store Mumbai",
-        "latitude": 19.0760,
-        "longitude": 72.8777,
-        "carbon_savings": "200kg CO₂",
-        "waste_reduction": "150kg",
-        "discounted_products": ["Reusable Bottle", "Solar Lamp"]
-    }
-]
-
-@app.get("/stores")
-def get_stores():
-    """Return all EcoShelf-enabled stores with sustainability stats"""
-    return {"stores": stores}
-
-# Helper function: haversine formula
-def calculate_distance(lat1, lon1, lat2, lon2):
-    R = 6371  # Earth radius in km
-    dlat = radians(lat2 - lat1)
-    dlon = radians(lon2 - lon1)
-    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    return R * c
-
-@app.get("/stores/nearest")
-def get_nearest_store(lat: float = Query(...), lon: float = Query(...)):
-    """Return nearest EcoShelf store based on user location"""
-    nearest = min(stores, key=lambda s: calculate_distance(lat, lon, s["latitude"], s["longitude"]))
-    return {"nearest_store": nearest}
-
-# -------------------------------
-# 🛒 Existing Discount Prediction APIs
-# -------------------------------
-
 # Load CSV data
 def load_data():
     inventory = pd.read_csv(os.path.join("app", "data", "inventory_data.csv"))
@@ -87,12 +37,14 @@ def load_data():
     inventory['current_date'] = pd.to_datetime(inventory['current_date'])
     return inventory, sales
 
-# Prediction function (existing logic unchanged)
+# Prediction function
 def predict_discounted_prices(inventory: pd.DataFrame, sales: pd.DataFrame):
     result = []
+
     for row in inventory.itertuples():
         prod_sales = sales[
-            (sales['barcode'] == row.barcode) & (sales['sale_date'] <= row.current_date)
+            (sales['barcode'] == row.barcode) &
+            (sales['sale_date'] <= row.current_date)
         ]
         if prod_sales.empty:
             continue
@@ -125,6 +77,7 @@ def predict_discounted_prices(inventory: pd.DataFrame, sales: pd.DataFrame):
             })
     return result
 
+# GET: Predict from default CSV
 @app.get("/predict-prices")
 def predict_prices():
     if model is None:
@@ -140,6 +93,7 @@ def predict_prices():
 
     return JSONResponse(content=results)
 
+# POST: Predict from live inventory
 @app.post("/predict-live")
 async def predict_live(request: Request):
     if model is None:
@@ -149,6 +103,7 @@ async def predict_live(request: Request):
     inventory = pd.DataFrame(body["inventory"])
     sales = pd.DataFrame(body["sales"])
 
+    # Convert dates
     inventory['mfg_date'] = pd.to_datetime(inventory['mfg_date'])
     inventory['expiry_date'] = pd.to_datetime(inventory['expiry_date'])
     inventory['current_date'] = pd.to_datetime(inventory['current_date'])
@@ -157,6 +112,7 @@ async def predict_live(request: Request):
     results = predict_discounted_prices(inventory, sales)
     return JSONResponse(content=results)
 
+# GET: Get previously updated prices
 @app.get("/api/discounted-prices")
 def get_discounted_prices():
     json_path = os.path.join("app", "updates", "updated_discounts.json")
@@ -165,4 +121,30 @@ def get_discounted_prices():
     with open(json_path, "r") as f:
         data = json.load(f)
     return JSONResponse(content=data)
+
+# --------------------------
+# 📍 Store Locator Feature
+# --------------------------
+def load_stores():
+    stores = pd.read_csv(os.path.join("app", "data", "stores_data.csv"))
+    return stores
+
+@app.get("/api/nearest-stores")
+def get_nearest_stores(lat: float, lon: float, max_results: int = 5):
+    stores = load_stores()
+
+    # Compute distance from user
+    stores["distance_km"] = stores.apply(
+        lambda row: geodesic((lat, lon), (row["latitude"], row["longitude"])).km, axis=1
+    )
+
+    # Filter stores with discounted products
+    stores = stores[stores["has_discounted_products"] == True]
+
+    # Sort by distance
+    nearest = stores.sort_values("distance_km").head(max_results)
+
+    # Return JSON
+    results = nearest.to_dict(orient="records")
+    return JSONResponse(content=results)
 
