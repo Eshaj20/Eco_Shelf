@@ -1,40 +1,36 @@
-"use client";
+import { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-import { useEffect, useState } from "react";
-import {
-  GoogleMap,
-  useLoadScript,
-  Marker,
-  InfoWindow,
-} from "@react-google-maps/api";
+function StoreLocator() {
+  const [stores, setStores] = useState([]);
+  const [coords, setCoords] = useState(null);
 
-const mapContainerStyle = {
-  width: "100%",
-  height: "500px",
-};
-
-// ✅ Default location (India center)
-const defaultCenter = {
-  lat: 20.5937,
-  lng: 78.9629,
-};
-
-export default function StoreLocator() {
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, // ✅ make sure this is set
+  // Fix missing marker icons in Leaflet
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+    iconUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+    shadowUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
   });
 
-  const [coords, setCoords] = useState(null);
-  const [stores, setStores] = useState([]);
-  const [selectedStore, setSelectedStore] = useState(null);
+  // Default center (India)
+  const defaultCenter = {
+    lat: 20.5937,
+    lon: 78.9629,
+  };
 
-  // ✅ Detect user location
+  // Get user location
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCoords({
           lat: position.coords.latitude,
-          lng: position.coords.longitude, // ✅ fixed
+          lon: position.coords.longitude,
         });
       },
       () => {
@@ -43,69 +39,60 @@ export default function StoreLocator() {
     );
   }, []);
 
-  // ✅ Fetch nearest stores when coords available
+  // Fetch nearest stores from backend
   useEffect(() => {
     if (coords) {
       fetch(
-        `http://localhost:8000/api/nearest-stores?lat=${coords.lat}&lon=${coords.lng}&max_results=5`
+        `http://localhost:8000/api/nearest-stores?lat=${coords.lat}&lon=${coords.lon}&max_results=5`
       )
         .then((res) => res.json())
-        .then((data) => setStores(data))
-        .catch((err) => console.error("Error fetching stores:", err));
+        .then((data) => setStores(data));
     }
   }, [coords]);
 
-  if (!isLoaded) return <div>Loading Maps...</div>;
-
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Find EcoShelf Stores Near You</h2>
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        zoom={5}
-        center={coords || defaultCenter}
-      >
-        {/* ✅ User Location Marker */}
-        {coords && (
-          <Marker
-            position={coords}
-            icon={{
-              url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-            }}
+      <h2>EcoShelf Store Locator (OpenStreetMap)</h2>
+      {coords ? (
+        <MapContainer
+          center={[coords.lat, coords.lon]}
+          zoom={12}
+          className="leaflet-container"
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
           />
-        )}
 
-        {/* ✅ Store Markers */}
-        {stores.map((store, idx) => (
-          <Marker
-            key={idx}
-            position={{ lat: store.lat, lng: store.lon }}
-            onClick={() => setSelectedStore(store)}
-          />
-        ))}
+          {/* User location marker */}
+          <Marker position={[coords.lat, coords.lon]}>
+            <Popup>📍 You are here</Popup>
+          </Marker>
 
-        {/* ✅ InfoWindow when a store is clicked */}
-        {selectedStore && (
-          <InfoWindow
-            position={{ lat: selectedStore.lat, lng: selectedStore.lon }}
-            onCloseClick={() => setSelectedStore(null)}
-          >
-            <div>
-              <h3 className="font-semibold">{selectedStore.name}</h3>
-              <p>Distance: {selectedStore.distance_km.toFixed(2)} km</p>
-              <p>
-                🌱 Carbon Savings:{" "}
-                {Math.floor(Math.random() * 50) + 10} kg CO₂
-              </p>
-              <p>
-                ♻️ Waste Reduction:{" "}
-                {Math.floor(Math.random() * 20) + 5} items
-              </p>
-            </div>
-          </InfoWindow>
-        )}
-      </GoogleMap>
+          {/* Store markers */}
+          {stores.map((store) => (
+            <Marker
+              key={store.store_id}
+              position={[store.latitude, store.longitude]}
+            >
+              <Popup>
+                <h3>{store.store_name}</h3>
+                <p>{store.address}</p>
+                <p>📍 {store.distance_km.toFixed(2)} km away</p>
+                <p>
+                  🌱 Carbon Saving: {store.carbon_saving} kg <br />
+                  ♻ Waste Reduction: {store.waste_reduction} kg
+                </p>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      ) : (
+        <p>Fetching location...</p>
+      )}
     </div>
   );
 }
+
+export default StoreLocator;
 
