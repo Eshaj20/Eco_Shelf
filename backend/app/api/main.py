@@ -20,7 +20,8 @@ app.add_middleware(
 
 # Safe model load
 try:
-    model_path = os.path.join("model", "price_model.pkl")
+    model_path = '../../model/price_model.pkl'
+    model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../model/price_model.pkl'))
     model = joblib.load(model_path)
 except Exception as e:
     model = None
