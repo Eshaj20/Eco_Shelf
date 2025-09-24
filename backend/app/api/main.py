@@ -25,6 +25,7 @@ try:
 except Exception as e:
     model = None
     print(f"❌ Failed to load model: {e}")
+# ...existing code...
 
 # Load CSV data
 def load_data():
